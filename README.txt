@@ -1,7 +1,7 @@
 # WebProxyServer
 A simple web proxy server made in C for a networks class.
 
-Danny Stieben, Aaron Tabor, Ahmed
+Danny Stieben, Aaron Tabor, Ahmed Alotaibi
 Group 12
 CSCE 3530 - UNT
 April 23, 2015
@@ -27,4 +27,4 @@ You can add bad words to the badwords.txt file. You can add more domains to bloc
 
 For blocked sites, you can edit the response that the proxy server sends to the browser instead of the site.
 
-If multiple requests fail midway through, it's possible that the proxy server crashed even though the last request was delivered. Simply start the server again to continue using it.
+If multiple requests fail midway through, it's possible that the proxy server crashed even though the last request was delivered. Simply start the server again to continue using it. However, the Python example given to us wasn't exactly "stable" either.
