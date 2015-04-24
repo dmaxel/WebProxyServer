@@ -23,4 +23,8 @@ For example, on CSE05, you can use:
 To test bad word filter, you can try:
 129.120.151.98:60000/www.dannystieben.com/lang.html
 
+You can add bad words to the badwords.txt file. You can add more domains to block in blacklist.txt file. Make sure that each line has a newline character at the end.
+
+For blocked sites, you can edit the response that the proxy server sends to the browser instead of the site.
+
 If multiple requests fail midway through, it's possible that the proxy server crashed even though the last request was delivered. Simply start the server again to continue using it.
