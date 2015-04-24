@@ -19,7 +19,7 @@
 
 #define BACKLOG	5
 #define BUF_SIZE	1024000
-#define LISTEN_PORT	60001
+#define LISTEN_PORT	60000
 
 int threadCount = BACKLOG;
 char theRes [BUF_SIZE];
@@ -117,6 +117,7 @@ char* listenRes() {
 	return theRes;
 }
 
+//translates hostnames to IP addresses
 int hostname_to_ip(char * hostname , char* ip)
 {
     struct hostent *he;
@@ -142,6 +143,7 @@ int hostname_to_ip(char * hostname , char* ip)
     return 1;
 }
 
+//replaces substrings of any size with other substrings of any size. Used in bad word filter
 char * str_replace ( const char *string, const char *substr, const char *replacement ){
   char *tok = NULL;
   char *newstr = NULL;
@@ -166,6 +168,7 @@ char * str_replace ( const char *string, const char *substr, const char *replace
   return newstr;
 }
 
+//method that talks with web server
 char* web_handler(char* ip, char* buf) {
     struct sockaddr_in	addr_send;
     int	i;
@@ -192,43 +195,66 @@ char* web_handler(char* ip, char* buf) {
 	close(sock_send);
         exit(0);
     }
-	
+	//send our request
 	send_len=strlen(buf);
 	bytes_sent=send(sock_send,buf,send_len,0);
+	//capture response
 	char* res = listenRes();
 	close(sock_send);
 	
 	return res;
 }
 
+//method that talks with the browser
 void *client_handler(void *sock_desc) {
 	int msg_size;
-	char buf[BUF_SIZE], request[5000];
+	char buf[BUF_SIZE], request[BUF_SIZE];
 	int sock = *(int*)sock_desc;
 	
 	while ((msg_size = recv(sock, buf, BUF_SIZE, 0)) > 0) {
         buf[msg_size] = 0;
 		
+		//figure out what we want to get
 		char tokenize[msg_size+1];
 		strcpy(tokenize, buf);
 		
 		char * token = strtok(tokenize, " ");
 		token = strtok(NULL, " ");
-		//address
+		//complete address
 		char * pch = token + 1;
 		char address[200];
-		strcpy(address, pch);
+		if(pch)
+		{
+			strcpy(address, pch);
+		}
 		
-		//document
+		//document path
 		char * pch2 = strchr(pch, '/');
 		char document[200];
-		strcpy(document, pch2);
+		if(pch2)
+		{
+			strcpy(document, pch2);
+		}
+		else
+		{
+			strcpy(document, "/");
+		}
 		
-		//host
+		//host or "domain"
 		char host[200], ip[100];
-		int diff = pch2 - pch;
+		int diff;
+		if(pch && pch2)
+		{
+			diff = pch2 - pch;
+		}
+		else
+		{
+			diff = strlen(address);
+		}
+			
 		strncpy(host, address, diff);
 		
+		//check if site is blocked
 		FILE * blacklist;
 		char blBuffer[100];
 		blacklist = fopen("blacklist.txt", "r");
@@ -246,6 +272,7 @@ void *client_handler(void *sock_desc) {
 		if(blocked == 1)
 		{
 			//this is blocked
+			//this whole block of code will read "blocked_response.txt" and send the contents to the browser
 			FILE * isBlocked;
 			isBlocked = fopen("blocked_response.txt", "r");
 			char blockedSend[BUF_SIZE];
@@ -273,6 +300,7 @@ void *client_handler(void *sock_desc) {
 			{
 				//make the file
 				fp = fopen(host, "w");
+				//build our request
 				strncpy(request, "GET ", 4);
 				strcat(request, document);
 				strcat(request, " HTTP/1.1\r\nHost: ");
@@ -283,8 +311,10 @@ void *client_handler(void *sock_desc) {
 				hostname_to_ip(host, ip);
 		
 				printf("%s\n", request);
-		
+				
+				//send our request
 				char * returned = web_handler(ip, request);
+				//filter for bad words
 				FILE * badwords;
 				badwords = fopen("badwords.txt", "r");
 				char badBuffer[100];
@@ -295,6 +325,7 @@ void *client_handler(void *sock_desc) {
 					returned = str_replace(returned, badBuffer, "***REMOVED***");
 				}
 				sendRes(returned, sock);
+				//print final version to cache file
 				fprintf(fp, "%s", returned);
 			}
 			else
@@ -308,6 +339,7 @@ void *client_handler(void *sock_desc) {
 					memset(fileBuffer,0,strlen(fileBuffer));
 				
 				}
+				//send cached content to browser
 				sendRes(toSend, sock);
 				memset(toSend,0,strlen(toSend));
 			}
@@ -316,7 +348,7 @@ void *client_handler(void *sock_desc) {
 		}
 		
 		memset(buf,0,strlen(buf));
-		memset(address,0,strlen(address));
+		//memset(address,0,strlen(address));
 		memset(document,0,strlen(document));
 		memset(ip,0,strlen(ip));
     }
