@@ -1,6 +1,8 @@
 # WebProxyServer
 A simple web proxy server made in C for a networks class.
 
+GitHub Repo: https://github.com/dmaxel/WebProxyServer
+
 Danny Stieben, Aaron Tabor, Ahmed Alotaibi
 Group 12
 CSCE 3530 - UNT
